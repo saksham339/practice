@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Bot</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        button { padding: 12px 25px; font-size: 18px; margin-top: 20px; cursor: pointer; }
+        #output { margin-top: 20px; font-size: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>🎤 AI Voice Bot</h1>
+    <button onclick="startListening()">Tap to Speak</button>
+    <p id="output">Click the button and ask me anything!</p>
+
+    <script>
+        const openAiApiKey = "YOUR_OPENAI_API_KEY";  // Replace with your OpenAI API key
+
+        function startListening() {
+            let recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = "en-US";
+
+            recognition.onresult = function(event) {
+                let userSpeech = event.results[0][0].transcript;
+                document.getElementById("output").innerText = "You: " + userSpeech;
+                getAIResponse(userSpeech);
+            };
+
+            recognition.onerror = function(event) {
+                document.getElementById("output").innerText = "Error: " + event.error;
+            };
+
+            recognition.start();
+        }
+
+        async function getAIResponse(userSpeech) {
+            document.getElementById("output").innerText = "Thinking... 🤔";
+            
+            let response = await fetch("https://api.openai.com/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${openAiApiKey}`
+                },
+                body: JSON.stringify({
+                    model: "gpt-3.5-turbo",
+                    messages: [{ role: "user", content: userSpeech }]
+                })
+            });
+
+            let data = await response.json();
+            let aiResponse = data.choices[0].message.content;
+            document.getElementById("output").innerText = "AI: " + aiResponse;
+            speak(aiResponse);
+        }
+
+        function speak(text) {
+            let speech = new SpeechSynthesisUtterance();
+            speech.text = text;
+            speech.lang = "en-US";
+            speech.volume = 1;
+            speech.rate = 1;
+            speech.pitch = 1;
+            window.speechSynthesis.speak(speech);
+        }
+    </script>
+
+</body>
+</html>
